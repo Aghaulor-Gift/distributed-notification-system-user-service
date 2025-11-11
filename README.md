@@ -6,16 +6,16 @@ Each service runs independently but communicates through a central message broke
 ---
 
 ## Table of Contents
-- [Overview](#-overview)
-- [Microservices](#-microservices)
-- [Architecture Diagram](#️-architecture-diagram)
-- [Core Technologies](#️-core-technologies)
-- [System Design Highlights](#-system-design-highlights)
-- [Local Development](#-local-development)
-- [CI/CD Workflow](#-cicd-workflow)
-- [Environment Variables](#-environment-variables)
-- [Health & Monitoring](#-health--monitoring)
-- [Contributors](#-contributors)
+- [Overview](#overview)
+- [Microservices](#microservices)
+- [Architecture Diagram](#️architecture-diagram)
+- [Core Technologies](#️core-technologies)
+- [System Design Highlights](#system-design-highlights)
+- [Local Development](#local-development)
+- [CI/CD Workflow](#cicd-workflow)
+- [Environment Variables](#environment-variables)
+- [Health & Monitoring](#health--monitoring)
+- [Contributors](#contributors)
 
 ---
 
