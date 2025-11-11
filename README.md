@@ -1,135 +1,333 @@
-#  Distributed Notification System
+# 👤 Distributed Notification System — User Service
 
-A scalable **event-driven microservices architecture** for handling notifications (Email, Push, etc.) asynchronously using **RabbitMQ**, **Redis**, and **PostgreSQL**.  
-Each service runs independently but communicates through a central message broker.
+**User Service (NestJS + PostgreSQL + Redis)**  
+Part of the **Distributed Notification System (Microservices & Message Queues)** project.
+
+This microservice manages **user accounts**, **contact information**, and **notification preferences**.  
+It exposes REST APIs that allow other services — like the **API Gateway** and **Template Service** — to retrieve and manage user data.
 
 ---
-
 ## Table of Contents
 - [Overview](#overview)
-- [Microservices](#microservices)
-- [Architecture Diagram](#️architecture-diagram)
-- [Core Technologies](#️core-technologies)
-- [System Design Highlights](#system-design-highlights)
-- [Local Development](#local-development)
-- [CI/CD Workflow](#cicd-workflow)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture Context](#architecture-context)
+- [Quick Start](#quick-start)
+- [Installation](#installation)
 - [Environment Variables](#environment-variables)
-- [Health & Monitoring](#health--monitoring)
-- [Contributors](#contributors)
-
----
+- [Project Structure](#project-structure)
+- [Database Schema](#database-schema)
+- [Standardized Response Interface](standardized-response-interface)
+- [Docker Setup](#docker-setup)
+- [Health Monitoring](#health-and-monitoring)
+- [CI/CD Workflow](#cicd-workflow)
+- [Author](#author)
+- [License](#license)
 
 ## Overview
-The Distributed Notification System is designed to process **high-volume notifications** efficiently with minimal latency and maximum reliability.  
-It utilizes **asynchronous messaging** to decouple services and prevent cascading failures.
+
+The **User Service** is responsible for:
+- Creating and managing user accounts.
+- Storing user contact information (email, push tokens, etc.).
+- Managing user notification preferences (opt-in/out, locale, rate limits).
+- Exposing REST APIs for other services.
+- Caching preferences in Redis for performance.
+- Integrating with the shared RabbitMQ broker for asynchronous workflows.
+
+This service is one of five microservices in the **Distributed Notification System**:
+
+| # | Service | Repo | Owner | Description |
+|---|----------|------|--------|--------------|
+| 1️⃣ | API Gateway | [`distributed-notification-system-api-gateway`](https://github.com/distributed-notification-system-api-gateway) | Alexander | Entry point for all notification requests. Publishes to RabbitMQ. |
+| **2️⃣** | **User Service** | [`distributed-notification-system-user-service`](https://github.com/distributed-notification-system-user-service) | **Gift** | Manages users and preferences. |
+| 3️⃣ | Template Service | [`distributed-notification-system-template-service`](https://github.com/distributed-notification-system-template-service) | Precious | Stores and renders templates. |
+| 4️⃣ | Email Service | [`distributed-notification-system-email-service`](https://github.com/distributed-notification-system-email-service) | Emzy | Sends email notifications. |
+| 5️⃣ | Push Service | [`distributed-notification-system-push-service`](https://github.com/distributed-notification-system-push-service) | Emzy | Sends mobile/web push notifications. |
+| 6️⃣ | Shared Contracts | [`distributed-notification-system-shared-contracts`](https://github.com/distributed-notification-system-shared-contracts) | All | Shared message/response interfaces. |
 
 ---
 
-## Microservices
-| Service | Description | Stack |
-|----------|--------------|-------|
-| **API Gateway** | Routes and authenticates external notification requests. | Node.js |
-| **User Service** | Manages user data, preferences, and authentication. | NestJS / PostgreSQL / Redis |
-| **Email Service** | Sends templated emails through SMTP or SendGrid API. | Node.js / |
-| **Push Service** | Sends web and mobile push notifications via FCM. | Node.js / Firebase |
-| **Template Service** | Stores and manages multilingual templates. | python/Flask / PostgreSQL |
-| **Message Broker** | Routes messages between services asynchronously. | RabbitMQ |
+##  Architecture Context
+
+┌──────────────────────────────┐  
+│ API Gateway │  
+│ (Publishes to RabbitMQ) │  
+└──────────────┬───────────────┘  
+│ REST  
+▼  
+┌──────────────────────────────┐  
+│ User Service │  
+│ (User Data + Preferences DB) │  
+└──────────────┬───────────────┘  
+│  
+▼  
+PostgreSQL + Redis  
+---
+## Tech Stack
+
+| Component | Technology |
+|------------|-------------|
+| Framework | [NestJS](https://nestjs.com/) |
+| Language | TypeScript |
+| Database | PostgreSQL |
+| Cache | Redis |
+| Message Queue | RabbitMQ |
+| Container | Docker |
+| Package Manager | PNPM or NPM |
+| Testing | Jest |
 
 ---
+## Installation
+Clone the repository:
 
-## Architecture Diagram
-[ Client ]  
-↓  
-[ API Gateway ]  
-↓  
-[ RabbitMQ Exchange ]  
-├── Email Queue → Email Service  
-├── Push Queue → Push Service  
-└── Failed Queue → Dead Letter Queue  
-
-
-Each service operates independently and communicates through **RabbitMQ** for reliability and scalability.
-
----
-
-## Core Technologies
-- **Node.js / NestJS** — Core microservice logic
-- **RabbitMQ** — Asynchronous message broker
-- **PostgreSQL** — Persistent storage
-- **Redis** — Caching and rate-limiting
-- **Docker + Docker Compose** — Containerized deployment
-- **GitHub Actions** — CI/CD automation
-- **JWT Auth** — Secure user authentication
-
----
-
-## System Design Highlights
-- **Asynchronous Messaging:** Services communicate via events, not direct calls.
-- **Retry & Dead Letter Queues:** Failed messages are retried with exponential backoff.
-- **Circuit Breaker Pattern:** Prevents total failure if one service goes down.
-- **Health Probes:** `/health` and `/ready` endpoints for monitoring.
-- **Scalability:** Each microservice runs as a separate container for horizontal scaling.
-
----
-
-## Local Development
-### Prerequisites
-- Docker & Docker Compose
-- Node.js 20+
-
-### Run all services
 ```bash
-docker compose up --build
+git clone https://github.com/<your-org>/distributed-notification-system-user-service.git  
+
+cd distributed-notification-system-user-service
 ```
-
-### View running services
+### Install dependencies:
 ```
-Service	URL
-User Service	http://localhost:3001
-
-RabbitMQ Dashboard	http://localhost:15672
-
-Redis	localhost:6379
-PostgreSQL	localhost:5432
+npm install
 ```
-## CI/CD Workflow
-
-#### Stage	Action
-- CI (Continuous Integration)	Lint, test, and build each service on every push.
-- CD (Continuous Deployment)	Build and push Docker images to Docker Hub when main branch is updated.
-
----
-### Workflows are located in:
-
-.github/workflows/  
- ├── [ci.yml](.github/workflows/ci.yml)  
- └── [cd.yml](.github/workflows/cd.yml)  
----
 
 ## Environment Variables
 
-Each service has its own .env file. Example:
+Copy `.env.example` to `.env` and configure it:
+
 ```
+SERVICE_NAME=user-service
+PORT=3001
+
+# PostgreSQL
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=usersdb
-RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-REDIS_HOST=redis
-JWT_SECRET=your_jwt_secret
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# RabbitMQ (CloudAMQP)
+RABBITMQ_URL=amqps://<user>:<password>@<cloudamqp-url>/<vhost>
+TEMPLATE_SERVICE_URL=https://template-service.team.cloud
+API_GATEWAY_URL=https://gateway.team.cloud
 ```
-## Health & Monitoring
+---
 
-- /health → Reports general health
+## Project Structure
+```
+distributed-notification-system-user-service/
+├── src/
+│ ├── app.module.ts
+│ ├── main.ts
+│ ├── users/
+│ │ ├── dto/
+│ │ ├── entities/
+│ │ ├── users.controller.ts
+│ │ ├── users.service.ts
+│ │ └── users.module.ts
+│ ├── rabbitmq/
+│ │ └── rabbitmq.service.ts
+│ ├── redis/
+│ │ └── redis.module.ts
+│ └── health/
+│ └── health.module.ts
+├── package.json
+├── .env
+├── .env.example
+└── README.md
+```
+## Quick Start
+```
+npm run start:dev
+```
 
-- /ready → Checks DB, Redis, and message broker connection
+The service will start on:
+```
+http://localhost:3001
 
-- Logs written to ./logs/user-service.log
+```
 
-## Contributors
-|Name	|Role	|Service|
-|-----|------|--------|
-|[Aghaulor]()	|Full-stack Developer	|User Service|
-|[Alexander]()|Backend Developer	|API Gateway Service|
-|  [Emzy]()  |  Backend Developer    | Email Service|
-|  [Emzy]()   |  Backend Developer     | Push Service|
-|  [Precious]()   | Backend Developer      |Template|
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|-----------|-------------|
+| **POST** | [`/api/users`](#post-apiusers) | Create a new user and publish a welcome notification |
+| **GET** | [`/api/users/:id`](#get-apiusersid) | Retrieve user details by ID |
+| **GET** | [`/api/users/:id/preferences`](#get-apiusersidpreferences) | Get a user's notification preferences |
+| **PUT** | [`/api/users/:id/preferences`](#put-apiusersidpreferences) | Update a user's notification preferences |
+| **GET** | [`/health`](#get-health) | Health check for service availability |
+| **GET** | [`/ready`](#get-ready) | Readiness check (database + Redis connectivity) |
+      
+
+### Example Response Format
+```
+{
+  "success": true,  
+  "data": {  
+    "id": "uuid",  
+    "email": "user@example.com",  
+    "preference": {  
+      "email_opt_in": true,  
+      "push_opt_in": false,  
+      "locale": "en",  
+      "rate_limit_per_min": 60  
+    }  
+  },  
+  "message": "ok"  
+}
+
+```
+
+## Database Schema
+
+### users table
+
+| Column        | Type      | Notes          |
+| ------------- | --------- | -------------- |
+| id            | UUID (PK) | Auto-generated |
+| email         | VARCHAR   | Unique         |
+| password_hash | VARCHAR   | Hashed         |
+| push_token    | VARCHAR   | Optional       |
+| created_at    | TIMESTAMP | Default: now() |  
+
+### preferences table
+| Column             | Type      | Notes                  |
+| ------------------ | --------- | ---------------------- |
+| id                 | UUID (PK) | Auto-generated         |
+| user_id            | UUID (FK) | References `users(id)` |
+| email_opt_in       | BOOLEAN   | Default: true          |
+| push_opt_in        | BOOLEAN   | Default: true          |
+| locale             | VARCHAR   | Default: 'en'          |
+| rate_limit_per_min | INTEGER   | Default: 60            |  
+
+
+
+
+### Service Responsibilities
+| Function            | Type        | Description                            |
+| ------------------- | ----------- | -------------------------------------- |
+| **User Creation**   | REST        | Register new users                     |
+| **Preferences API** | REST        | Read/Update notification preferences   |
+| **Cache Layer**     | Redis       | Cache user preferences for API Gateway |
+| **Integration**     | REST + AMQP | Provides user data to other services   |
+| **Health Checks**   | REST        | `/health` and `/ready` endpoints       |  
+ 
+
+## Standardized Response Interface
+
+### All responses must follow the shared contract:
+```
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message: string;
+  meta?: {
+    total: number;
+    limit: number;
+    page: number;
+    total_pages: number;
+    has_next: boolean;
+    has_previous: boolean;
+  };
+}
+```
+
+
+##  Docker Setup
+
+### Build the image
+```
+docker build -t distributed-notification-system-user-service .
+```
+### Run locally
+```
+docker run -p 3001:3001 --env-file .env distributed-notification-system-user-service
+```
+### Or use Docker Compose
+```
+docker compose up -d
+```
+
+### Running Tests
+```
+pnpm test
+```
+
+
+## CI/CD Workflow
+
+This service uses GitHub Actions for automatic build and deployment.
+
+### .github/workflows/deploy.yaml
+```
+name: CI/CD
+on:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: pnpm install
+      - run: pnpm lint
+      - run: pnpm test
+      - run: docker build -t ghcr.io/distributed-notification-system-user-service:latest .
+      - run: docker push ghcr.io/distributed-notification-system-user-service:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
+          "docker pull ghcr.io/distributed-notification-system-user-service:latest && docker compose up -d"
+```
+
+## Health and Monitoring
+| Endpoint                | Description                                                |
+| ----------------------- | ---------------------------------------------------------- |
+| `/health`               | Returns basic heartbeat `{ success: true, message: 'ok' }` |
+| `/ready`                | Checks DB + Redis + RabbitMQ connection                    |
+| `/metrics` *(optional)* | Prometheus metrics (if enabled)                            |
+  
+
+
+## Integration with Other Services
+| Consumer         | Method                           | Description                                           |
+| ---------------- | -------------------------------- | ----------------------------------------------------- |
+| API Gateway      | `GET /api/users/:id/preferences` | Fetches user preferences before sending notifications |
+| Template Service | —                                | (Optional future integration for personalization)     |
+
+
+
+## Part of the Distributed Notification System
+| Service                 | Responsibility                                         |
+| ----------------------- | ------------------------------------------------------ |
+| **API Gateway**         | Entry point; routes and publishes messages to RabbitMQ |
+| **User Service (this)** | Manages user data and preferences                      |
+| **Template Service**    | Renders templates with variables                       |
+| **Email Service**       | Sends email notifications                              |
+| **Push Service**        | Sends push notifications                               |
+
+
+## Author
+
+Aghaulor Gift
+Role: Full Stack Developer  
+Focus for current project: Backend (NestJS, PostgreSQL, Redis, RabbitMQ)  
+Email:[Email](mailto:aghaulor.gift@gmail.com)
+
+## License
+
+This project is part of the Distributed Notification System task under Backend Task: Microservices & Message Queues.

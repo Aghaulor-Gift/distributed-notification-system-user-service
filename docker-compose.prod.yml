@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+  # ===============================
+  # PostgreSQL Database
+  # ===============================
+  postgres:
+    image: postgres:15
+    container_name: user_service_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-usersdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===============================
+  # Redis Cache
+  # ===============================
+  redis:
+    image: redis:alpine
+    container_name: user_service_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ===============================
+  # RabbitMQ (Broker)
+  # ===============================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: user_service_rabbit
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    ports:
+      - "5672:5672"    # for services
+      - "15672:15672"  # for management dashboard
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "node_health_check"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===============================
+  # User Service
+  # ===============================
+  user-service:
+    image: gift21990/user-service:latest
+    container_name: user_service_app
+    restart: always
+    env_file:
+      - .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  volumes:
+    pgdata:
