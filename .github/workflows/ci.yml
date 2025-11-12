@@ -90,7 +90,7 @@ jobs:
 
 
       - name: 🧹 Lint code
-        run: npm run lint
+        run: npm run lint:check
 
 
       - name: 🧪 Run unit tests
