@@ -1,63 +1,94 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import * as amqp from 'amqplib';
+import type { Connection, Channel } from 'amqplib';
 
 @Injectable()
-export class RabbitMQService {
-  private connection: amqp.Connection | null = null;
-  private channel: amqp.Channel | null = null;
+export class RabbitMQService implements OnModuleDestroy {
   private readonly logger = new Logger(RabbitMQService.name);
+  private connection: Connection | null = null;
+  private channel: Channel | null = null;
+  private readonly exchange = 'notifications.direct';
 
-  async connect(): Promise<void> {
+  async connect() {
+    const url = process.env.RABBITMQ_URL;
+    if (!url) throw new Error('RABBITMQ_URL environment variable not set');
+
     try {
-      const url = process.env.RABBITMQ_URL;
+      this.logger.log(`Connecting to RabbitMQ at ${url}...`);
 
-      if (!url) {
-        throw new Error('Missing RABBITMQ_URL in environment variables.');
+      // ✅ Correct double-cast
+      this.connection = (await amqp.connect(url)) as unknown as Connection;
+      this.channel = (await this.connection.createChannel() as unknown) as Channel;
+
+      if (!this.channel) throw new Error('Failed to create channel.');
+      await this.channel.assertExchange(this.exchange, 'direct', { durable: true });
+
+      this.logger.log('✅ Connected to RabbitMQ and exchange declared.');
+
+      this.connection.on('close', async () => {
+        this.logger.warn('⚠️ RabbitMQ connection closed. Reconnecting...');
+        this.connection = null;
+        this.channel = null;
+        await this.reconnect();
+      });
+
+      this.connection.on('error', (err) => {
+        this.logger.error(`❌ RabbitMQ connection error: ${err.message}`);
+      });
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`❌ RabbitMQ connection failed: ${errorMsg}`);
+      await this.reconnect();
+    }
+  }
+
+  private async reconnect(retries = 5, delayMs = 5000) {
+    for (let i = 0; i < retries; i++) {
+      this.logger.log(`🔄 Attempting RabbitMQ reconnect (${i + 1}/${retries})...`);
+      try {
+        await this.connect();
+        return;
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
-
-      // Properly typed connection
-      const connection: amqp.Connection = await amqp.connect(url);
-      const channel: amqp.Channel = await connection.createChannel();
-
-      await channel.assertExchange('notifications.direct', 'direct', { durable: true });
-
-      // Save references safely
-      this.connection = connection;
-      this.channel = channel;
-
-      this.logger.log('Connected to RabbitMQ and exchange declared');
-    } catch (error: any) {
-      this.logger.error(' Failed to connect to RabbitMQ:', error.message);
     }
+    this.logger.error('❌ Failed to reconnect to RabbitMQ after multiple attempts.');
   }
 
-  async publish(exchange: string, routingKey: string, message: object): Promise<void> {
+  async publish(exchange: string, routingKey: string, message: Record<string, any>) {
     if (!this.channel) {
-      this.logger.error('RabbitMQ channel not initialized. Message dropped.');
-      return;
+      this.logger.warn(' Channel not initialized, reconnecting...');
+      await this.connect();
     }
 
     try {
-      const buffer = Buffer.from(JSON.stringify(message));
-      this.channel.publish(exchange, routingKey, buffer);
-      this.logger.log(`Published message to ${exchange} (${routingKey})`);
-    } catch (error: any) {
-      this.logger.error(' Failed to publish message:', error.message);
+      const payload = Buffer.from(JSON.stringify(message));
+      this.channel!.publish(exchange, routingKey, payload);
+      this.logger.log(` Message published to ${routingKey}: ${JSON.stringify(message)}`);
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`❌ Failed to publish message: ${errorMsg}`);
     }
   }
 
-  async close(): Promise<void> {
+  async close() {
     try {
       if (this.channel) {
         await this.channel.close();
-        this.logger.log('✅ RabbitMQ channel closed.');
+        this.channel = null;
       }
       if (this.connection) {
-        await this.connection.close();
-        this.logger.log('✅ RabbitMQ connection closed.');
+        await (this.connection as Connection);
+        this.connection = null;
       }
-    } catch (error: any) {
-      this.logger.error('⚠️ Error closing RabbitMQ connection:', error.message);
+      this.logger.log('RabbitMQ connection closed gracefully.');
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Error closing RabbitMQ connection: ${errorMsg}`);
     }
+  }
+
+  async onModuleDestroy() {
+    await this.close();
   }
 }

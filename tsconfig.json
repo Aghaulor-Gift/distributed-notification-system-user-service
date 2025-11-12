@@ -20,6 +20,16 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true
-  }
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "lib": ["ES2023"],
+    "typeRoots": ["./node_modules/@types", "./src/types"]  
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"],
+  "ts-node": {
+    "esm": true,
+    "swc": true
+  }   
+  
 }

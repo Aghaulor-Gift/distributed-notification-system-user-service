@@ -7,6 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
 import { RabbitMQService } from '../rabbitmq/rabbitmq.service';
 
+
 @Injectable()
 export class UsersService implements OnModuleInit {
   constructor(
@@ -37,16 +38,13 @@ export class UsersService implements OnModuleInit {
     await this.prefRepo.save(pref);
 
     // 3️ Publish welcome notification to RabbitMQ
-    await this.rabbitmqService.publish(
-      'notifications.direct', // Exchange
-      'email.queue', // Routing key
-      {
-        type: 'welcome_email',
-        to: user.email,
-        subject: 'Welcome to Team Cloud!',
-        body: `Hi there, your account has been created successfully.`,
-      },
-    );
+    await this.rabbitmqService.publish('notifications.direct', 'email.queue', {
+      type: 'welcome_email',
+      to: user.email,
+      subject: 'Welcome!',
+      body: 'Hi there...'
+});
+
 
     // 4 Return success response
     return {
