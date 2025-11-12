@@ -18,7 +18,7 @@ export class RabbitMQService implements OnModuleDestroy {
 
       // ✅ Correct double-cast
       this.connection = (await amqp.connect(url)) as unknown as Connection;
-      this.channel = (await this.connection.createChannel() as unknown) as Channel;
+      this.channel = (await this.connection.createChannel() as Channel) as Channel;
 
       if (!this.channel) throw new Error('Failed to create channel.');
       await this.channel.assertExchange(this.exchange, 'direct', { durable: true });

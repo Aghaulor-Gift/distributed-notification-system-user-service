@@ -6,10 +6,10 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
 
-  // Global prefix for all routes
+  // Global prefix
   app.setGlobalPrefix('api');
 
-  // Global validation pipes
+  // Validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -18,7 +18,15 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger setup
+  // Environment detection
+  const port = process.env.PORT || 3001;
+  const env = process.env.NODE_ENV || 'development';
+  const baseUrl =
+    env === 'production'
+      ? process.env.API_BASE_URL || 'https://your-production-domain.com'
+      : `http://localhost:${port}`;
+
+  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('User Service API')
     .setDescription(
@@ -28,18 +36,15 @@ async function bootstrap() {
     .addTag('Users')
     .addTag('Preferences')
     .addTag('Health')
-    .addServer('http://localhost:3001', 'Local Environment')
-    //.addServer('https://your-deployment-domain.com', 'Production Environment')
+    .addServer(baseUrl, `${env.charAt(0).toUpperCase() + env.slice(1)} Environment`)
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  // Start the server
-  const port = process.env.PORT || 3001;
   await app.listen(port);
 
-  console.log(`${process.env.SERVICE_NAME} running on port ${port}`);
-  console.log(`Swagger Docs: http://localhost:${port}/docs`);
+  console.log(`🚀 ${process.env.SERVICE_NAME || 'User Service'} running on port ${port}`);
+  console.log(`📘 Swagger Docs: ${baseUrl}/docs`);
 }
 bootstrap();
