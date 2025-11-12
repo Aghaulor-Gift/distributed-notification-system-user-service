@@ -65,9 +65,8 @@ export class UsersService implements OnModuleInit {
   }
 
   async findByEmail(email: string) {
-  return this.userRepo.findOne({ where: { email } });
-}
-
+    return this.userRepo.findOne({ where: { email } });
+  }
 
   async getPreferences(id: string) {
     const pref = await this.prefRepo.findOne({ where: { user: { id } } });
@@ -75,26 +74,25 @@ export class UsersService implements OnModuleInit {
   }
 
   async updatePreferences(id: string, dto: UpdatePreferenceDto) {
-  const pref = await this.prefRepo.findOne({ where: { user: { id } } });
+    const pref = await this.prefRepo.findOne({ where: { user: { id } } });
 
-  // Handle null case
-  if (!pref) {
+    // Handle null case
+    if (!pref) {
+      return {
+        success: false,
+        message: 'Preferences not found for this user',
+        data: null,
+      };
+    }
+
+    //Safe update
+    Object.assign(pref, dto);
+    await this.prefRepo.save(pref);
+
     return {
-      success: false,
-      message: 'Preferences not found for this user',
-      data: null,
+      success: true,
+      data: pref,
+      message: 'Preferences updated successfully',
     };
   }
-
-  //Safe update
-  Object.assign(pref, dto);
-  await this.prefRepo.save(pref);
-
-  return {
-    success: true,
-    data: pref,
-    message: 'Preferences updated successfully',
-  };
-}
-
 }

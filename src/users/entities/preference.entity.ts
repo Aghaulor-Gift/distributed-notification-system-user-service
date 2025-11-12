@@ -22,4 +22,3 @@ export class Preference {
   @JoinColumn({ name: 'user_id' })
   user: User;
 }
-

@@ -15,8 +15,6 @@ import { ConfigModule } from '@nestjs/config';
         signOptions: { expiresIn: Number(process.env.JWT_EXPIRATION?.replace('s', '')) || 3600 },
       }),
     }),
-
-
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

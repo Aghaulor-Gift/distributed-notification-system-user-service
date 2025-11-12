@@ -17,4 +17,3 @@ export class UpdatePreferenceDto {
   @IsNumber()
   rate_limit_per_min?: number;
 }
-

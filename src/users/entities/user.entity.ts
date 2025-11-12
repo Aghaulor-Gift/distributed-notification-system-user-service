@@ -21,4 +21,3 @@ export class User {
   @OneToOne(() => Preference, (pref) => pref.user)
   preference: Preference;
 }
-

@@ -1,20 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Put,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Req, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request } from 'express';
-
-
 
 @Controller('api/users')
 export class UsersController {
@@ -61,10 +50,7 @@ export class UsersController {
   // -----------------------------------------------
   @UseGuards(JwtAuthGuard)
   @Put(':id/preferences')
-  async updatePreferences(
-    @Param('id') id: string,
-    @Body() dto: UpdatePreferenceDto,
-  ) {
+  async updatePreferences(@Param('id') id: string, @Body() dto: UpdatePreferenceDto) {
     return this.usersService.updatePreferences(id, dto);
   }
 }

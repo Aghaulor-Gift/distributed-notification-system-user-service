@@ -7,12 +7,9 @@ import { Preference } from './entities/preference.entity';
 import { RabbitMQModule } from '../rabbitmq/rabbitmq.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, Preference]),
-    RabbitMQModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User, Preference]), RabbitMQModule],
   controllers: [UsersController],
   providers: [UsersService],
-  exports: [UsersService], 
+  exports: [UsersService],
 })
 export class UsersModule {}

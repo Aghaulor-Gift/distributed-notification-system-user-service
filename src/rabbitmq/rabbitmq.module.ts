@@ -6,4 +6,3 @@ import { RabbitMQService } from './rabbitmq.service';
   exports: [RabbitMQService], // makes it visible to other modules
 })
 export class RabbitMQModule {}
-
