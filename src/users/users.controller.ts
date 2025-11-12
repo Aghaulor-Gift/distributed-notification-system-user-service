@@ -12,6 +12,9 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import type { Request } from 'express';
+
+
 
 @Controller('api/users')
 export class UsersController {
@@ -30,7 +33,7 @@ export class UsersController {
   // -----------------------------------------------
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(@Req() req) {
+  getProfile(@Req() req: Request) {
     // The req.user comes from JwtStrategy.validate()
     return req.user;
   }

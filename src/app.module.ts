@@ -22,7 +22,7 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
         password: process.env.POSTGRES_PASSWORD,
         database: process.env.POSTGRES_DB,
         autoLoadEntities: true,
-        synchronize: false, // set to true only in development
+        synchronize: true, // set to true only in development
       }),
     }),
 

@@ -29,7 +29,7 @@ async function bootstrap() {
     .addTag('Preferences')
     .addTag('Health')
     .addServer('http://localhost:3001', 'Local Environment')
-    .addServer('https://your-deployment-domain.com', 'Production Environment')
+    //.addServer('https://your-deployment-domain.com', 'Production Environment')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

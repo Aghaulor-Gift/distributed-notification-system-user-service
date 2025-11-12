@@ -64,6 +64,11 @@ export class UsersService implements OnModuleInit {
     return { success: true, data: user, message: 'ok' };
   }
 
+  async findByEmail(email: string) {
+  return this.userRepo.findOne({ where: { email } });
+}
+
+
   async getPreferences(id: string) {
     const pref = await this.prefRepo.findOne({ where: { user: { id } } });
     return { success: true, data: pref, message: 'ok' };
