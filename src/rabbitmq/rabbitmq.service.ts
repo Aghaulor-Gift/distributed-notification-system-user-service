@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  OnModuleDestroy,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import * as amqp from 'amqplib';
 
 type AmqpConnection = Awaited<ReturnType<typeof amqp.connect>>;
@@ -31,8 +26,8 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
 
     try {
       this.logger.log(`Connecting to RabbitMQ → ${url}`);
-      this.connection = (await amqp.connect(url)) as AmqpConnection;
-      this.channel = (await this.connection.createChannel()) as AmqpChannel;
+      this.connection = await amqp.connect(url);
+      this.channel = await this.connection.createChannel();
 
       await this.channel.assertExchange(this.exchange, 'direct', { durable: true });
 
@@ -49,7 +44,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
         this.logger.error(`RabbitMQ connection error: ${err?.message ?? err}`);
       });
     } catch (err) {
-      this.logger.error(`RabbitMQ connect failed: ${err instanceof Error ? err.message : String(err)}`);
+      this.logger.error(
+        `RabbitMQ connect failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
       await this.reconnect();
     }
   }
@@ -100,7 +97,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Batch published (${this.batchQueue.length})`);
       this.batchQueue = [];
     } catch (err) {
-      this.logger.error(`Batch publish failed: ${err instanceof Error ? err.message : String(err)}`);
+      this.logger.error(
+        `Batch publish failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
@@ -118,7 +117,9 @@ export class RabbitMQService implements OnModuleInit, OnModuleDestroy {
       }
       this.logger.log('RabbitMQ closed.');
     } catch (err) {
-      this.logger.error(`Error closing RabbitMQ: ${err instanceof Error ? err.message : String(err)}`);
+      this.logger.error(
+        `Error closing RabbitMQ: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
   }
 
