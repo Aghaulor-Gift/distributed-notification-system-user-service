@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,17 +29,8 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/user-service:latest
             ${{ secrets.DOCKER_HUB_USERNAME }}/user-service:${{ github.run_number }}
-          build-args: |
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-            REDIS_HOST=${{ secrets.REDIS_HOST }}
-            REDIS_PORT=${{ secrets.REDIS_PORT }}
-            RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            NODE_ENV=production
-            PORT=${{ secrets.PORT }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Notify deployment
-        run: echo "User Service image successfully pushed to Docker Hub"
+      - name: Notify
+        run: echo "User Service image pushed to Docker Hub"

@@ -1,96 +1,43 @@
+version: '3.9'
 services:
-  # ===============================
-  # PostgreSQL Database
-  # ===============================
   postgres:
     image: postgres:15
-    container_name: user_service_db
-    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-usersdb}
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - backend
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    networks: [backend]
 
-  # ===============================
-  # Redis Cache
-  # ===============================
   redis:
     image: redis:alpine
-    container_name: user_service_redis
-    restart: always
-    ports:
-      - "6379:6379"
-    networks:
-      - backend
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+    networks: [backend]
 
-  # ===============================
-  # RabbitMQ (Message Broker)
-  # ===============================
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: user_service_rabbit
-    restart: always
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
     ports:
-      - "5672:5672"    # AMQP port
-      - "15672:15672"  # Web management UI
-    networks:
-      - backend
-    healthcheck:
-      test: ["CMD", "rabbitmqctl", "node_health_check"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "15672:15672"
+    networks: [backend]
 
-  # ===============================
-  # User Service
-  # ===============================
   user-service:
-    image: techy/user-service:latest   # <-- Replace with your Docker Hub username if different
-    container_name: user_service_app
-    restart: always
+    image: gift21990/user-service:latest
     env_file:
       - .env.production
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      - postgres
+      - redis
+      - rabbitmq
     ports:
       - "3001:3001"
-    networks:
-      - backend
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-# ===============================
-# Networks and Volumes
-# ===============================
-networks:
-  backend:
+    networks: [backend]
 
 volumes:
   pgdata:
+
+networks:
+  backend:
+    driver: bridge

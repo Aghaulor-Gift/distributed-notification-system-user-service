@@ -1,37 +1,25 @@
-# Stage 1: Build
+# builder
 FROM node:20-slim AS builder
-
 WORKDIR /app
 
-# Install system dependencies required for node-gyp / bcrypt etc.
-RUN apt-get update && apt-get install -y python3 make g++ openssl curl && rm -rf /var/lib/apt/lists/*
-
+# install build deps
 COPY package*.json ./
-
-# Install dependencies (production + dev for build)
 RUN npm ci
 
 COPY . .
-
-# Build the NestJS application
 RUN npm run build
 
-# Stage 2: Runtime
-FROM node:20-slim
-
+# runtime
+FROM node:20-slim AS runtime
 WORKDIR /app
 
-# Copy built app
-COPY --from=builder /app/dist ./dist
+# only runtime deps
 COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Install only production dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+# copy built app
+COPY --from=builder /app/dist ./dist
 
 ENV NODE_ENV=production
-ENV PORT=3001
-
 EXPOSE 3001
-
-# Start the app
 CMD ["node", "dist/main.js"]
