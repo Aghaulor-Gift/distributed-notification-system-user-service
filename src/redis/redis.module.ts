@@ -7,9 +7,15 @@ import Redis from 'ioredis';
     {
       provide: 'REDIS_CLIENT',
       useFactory: () => {
-        return new Redis({
-          host: process.env.REDIS_HOST,
-          port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        const url = process.env.REDIS_URL;
+        if (!url) {
+          throw new Error('REDIS_URL is missing!');
+        }
+
+        return new Redis(url, {
+          tls: {
+            rejectUnauthorized: false,  // Required by Railway
+          },
         });
       },
     },
