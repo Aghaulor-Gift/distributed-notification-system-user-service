@@ -7,15 +7,17 @@ import Redis from 'ioredis';
     {
       provide: 'REDIS_CLIENT',
       useFactory: () => {
-        const url = process.env.REDIS_URL;
-        if (!url) {
-          throw new Error('REDIS_URL is missing!');
+        if (process.env.REDIS_URL) {
+          // Railway
+          return new Redis(process.env.REDIS_URL, {
+            tls: { rejectUnauthorized: false },
+          });
         }
 
-        return new Redis(url, {
-          tls: {
-            rejectUnauthorized: false,  // Required by Railway
-          },
+        // Docker local container
+        return new Redis({
+          host: process.env.REDIS_HOST || 'redis',
+          port: parseInt(process.env.REDIS_PORT || '6379', 10),
         });
       },
     },
