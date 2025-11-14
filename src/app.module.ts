@@ -25,7 +25,6 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
       }),
     }),
 
-
     // Modules
     RedisModule,
     UsersModule,
