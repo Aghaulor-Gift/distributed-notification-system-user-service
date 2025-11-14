@@ -16,15 +16,15 @@ import { RabbitMQModule } from './rabbitmq/rabbitmq.module';
     TypeOrmModule.forRootAsync({
       useFactory: () => ({
         type: 'postgres',
-        host: process.env.POSTGRES_HOST,
-        port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
-        username: process.env.POSTGRES_USER,
-        password: process.env.POSTGRES_PASSWORD,
-        database: process.env.POSTGRES_DB,
+        url: process.env.DATABASE_URL,
         autoLoadEntities: true,
-        synchronize: true, // set to true only in development
+        synchronize: true,
+        ssl: {
+          rejectUnauthorized: false, // Railway requires SSL
+        },
       }),
     }),
+
 
     // Modules
     RedisModule,
